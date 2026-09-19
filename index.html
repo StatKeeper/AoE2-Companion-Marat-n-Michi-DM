@@ -236,7 +236,6 @@
             let numFecha = 1;
             let duracionSegundos = 999999;
 
-            // Extraer datos generales de la partida
             lineas.forEach(linea => {
                 if(linea.toLowerCase().includes('jornada')) {
                     const match = linea.match(/fecha\s*(\d+)/i);
@@ -250,7 +249,6 @@
                 }
             });
 
-            // Separar jugadores por equipo
             let equipos = { "Equipo 1": [], "Equipo 2": [] };
             let lineasJugadores = [];
 
@@ -268,17 +266,21 @@
                 }
             });
 
-            // Determinar ganadores y perdedores (asumimos Equipo 2 o el que corresponda según la lógica de victoria)
-            // En el ejemplo anterior el Equipo 2 ganó. Verificamos si los datos indican ganadores explícitamente o por puntaje base.
-            // Para mantener coherencia, evaluaremos el equipo ganador según el texto o si se especifica.
-            // Identificamos el equipo ganador buscando qué equipo tiene puntaje de victoria o por defecto Equipo 2 como en tu ejemplo.
-            let equipoGanador = "Equipo 2"; // Ajustable según formato, por defecto tomamos la regla previa
+            // Determinar equipo ganador basándose en la columna 1 (puntos base 3) de sus integrantes
+            let puntosEquipo1 = 0;
+            let puntosEquipo2 = 0;
+            lineasJugadores.forEach(item => {
+                const col1 = parseInt(item.partes[1]) || 0;
+                if(col1 === 3) {
+                    if(item.equipo === "Equipo 1") puntosEquipo1 += 3;
+                    if(item.equipo === "Equipo 2") puntosEquipo2 += 3;
+                }
+            });
+            let equipoGanador = (puntosEquipo1 > puntosEquipo2) ? "Equipo 1" : "Equipo 2";
 
-            // Copia del ranking actual antes de aplicar la partida para evaluar Top 5 y posiciones previas
             let rankingPrevio = obtenerRankingOrdenado();
             let top5Nombres = rankingPrevio.slice(0, 5).map(j => j.nombre);
 
-            // Verificar si el equipo ganador se enfrentó a un top 5 (para Matagigantes)
             let equipoRivalTieneTop5 = false;
             let rivalEquipoGanador = (equipoGanador === "Equipo 2") ? "Equipo 1" : "Equipo 2";
             equipos[rivalEquipoGanador].forEach(jugadorRival => {
@@ -289,11 +291,20 @@
 
             lineasJugadores.forEach(item => {
                 const { partes, equipo, nombre } = item;
-                const excel = parseInt(partes[1]) || 0;
-                const resist = parseInt(partes[2]) || 0;
-                const mil = parseInt(partes[3]) || 0;
-                const oro = parseInt(partes[4]) || 0;
-                const soc = parseInt(partes[5]) || 0;
+                
+                // Mapeo exacto de columnas:
+                // Columna 1 (partes[1]): Puntos base (3 si victoria, 0 si derrota)
+                // Columna 2 (partes[2]): Bono de Excelencia (E)
+                // Columna 3 (partes[3]): Bono de Resistencia (R)
+                // Columna 4 (partes[4]): Bono Militar (M)
+                // Columna 5 (partes[5]): Bono de Oro (O)
+                // Columna 6 (partes[6]): Bono de Sociedad (S)
+                let ptsBase = parseInt(partes[1]) || 0;
+                let excel = parseInt(partes[2]) || 0;
+                let resist = parseInt(partes[3]) || 0;
+                let mil = parseInt(partes[4]) || 0;
+                let oro = parseInt(partes[5]) || 0;
+                let soc = parseInt(partes[6]) || 0;
 
                 if(!datosTorneo.jugadores[nombre]) {
                     datosTorneo.jugadores[nombre] = {
@@ -316,7 +327,7 @@
                 }
 
                 let j = datosTorneo.jugadores[nombre];
-                let gano = (equipo === equipoGanador);
+                let gano = (ptsBase === 3 || equipo === equipoGanador);
 
                 j.pj += 1;
                 j.e += excel;
@@ -325,7 +336,7 @@
                 j.o += oro;
                 j.s += soc;
 
-                let puntosPartida = excel + resist + mil + oro + soc;
+                let puntosPartida = ptsBase + excel + resist + mil + oro + soc;
                 let bonoRchOtorgado = 0;
                 let bonoMgOtorgado = 0;
                 let bonoRlpOtorgado = 0;
@@ -333,7 +344,6 @@
                 if(gano) {
                     j.victorias += 1;
                     j.vd = 1;
-                    puntosPartida += 3; // 3 puntos base por victoria
 
                     // Lógica de Racha (Rch): Si ya venía con racha previa >= 1, gana el bono de racha (+1)
                     if(j.rachaConectada >= 1) {
@@ -341,7 +351,6 @@
                         j.rch += 1;
                         puntosPartida += 1;
                     }
-                    // Incrementamos la racha para el siguiente encuentro
                     j.rachaConectada += 1;
 
                     // Lógica de Relámpago (RLP): Si dura menos de 60 min (< 3600 segundos)
