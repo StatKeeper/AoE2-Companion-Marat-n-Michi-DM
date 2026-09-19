@@ -15,6 +15,7 @@
             --text-muted: #8b949e;
             --border-color: #30363d;
             --green: #238636;
+            --red: #f85149;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
@@ -137,15 +138,15 @@
     <!-- 1. INICIO -->
     <div id="tab-inicio" class="tab-content active">
         <div class="welcome-hero">
-            <h1 id="tituloDinamicoPrincipal">RANKING MARATÓN MICHI DM</h1>
+            <h1>RANKING MARATÓN MICHI DM</h1>
             <p>Bienvenido al portal oficial del torneo de la comunidad.</p>
         </div>
     </div>
 
     <!-- 2. CLASIFICACIÓN -->
     <div id="tab-clasificacion" class="tab-content">
-        <h2 id="tituloDinamicoSeccion">Clasificación General</h2>
-        <div id="infoActualizacion" class="subtitulo-estado">Tabla actualizada hasta: Ninguna partida registrada.</div>
+        <h2 id="tituloDinamicoSeccion">Ranking Maratón Michi DM</h2>
+        <div id="infoActualizacion" class="subtitulo-estado">Tabla actualizada Ninguna partida registrada.</div>
         
         <div class="table-container">
             <table>
@@ -221,8 +222,7 @@
             partidas: [],
             ultimaFechaNum: 1,
             ultimaPartidaNum: 1,
-            totalPartidasIngresadas: 0,
-            indiceDinamicoF: 10
+            totalPartidasIngresadas: 0
         };
 
         function switchTab(evt, tabId) {
@@ -281,7 +281,6 @@
             datosTorneo.ultimaFechaNum = numFecha;
             datosTorneo.ultimaPartidaNum = numPartida;
             datosTorneo.totalPartidasIngresadas += 1;
-            datosTorneo.indiceDinamicoF = 9 + datosTorneo.totalPartidasIngresadas;
 
             let rankingAnterior = obtenerRankingOrdenado();
             let mapaPosicionesAnteriores = {};
@@ -381,11 +380,11 @@
                 if(gano) sucesoPartidaArr.push("Victoria");
                 else sucesoPartidaArr.push("Derrota");
 
-                if(excel > 0) sucesoPartidaArr.push("e");
-                if(resist > 0) sucesoPartidaArr.push("r");
-                if(mil > 0) sucesoPartidaArr.push("m");
-                if(oro > 0) sucesoPartidaArr.push("o");
-                if(soc > 0) sucesoPartidaArr.push("s");
+                if(excel > 0) sucesoPartidaArr.push("E");
+                if(resist > 0) sucesoPartidaArr.push("R");
+                if(mil > 0) sucesoPartidaArr.push("M");
+                if(oro > 0) sucesoPartidaArr.push("O");
+                if(soc > 0) sucesoPartidaArr.push("S");
 
                 let bonoRchOtorgado = 0;
                 let bonoMgOtorgado = 0;
@@ -399,7 +398,7 @@
                         bonoRchOtorgado = 1;
                         j.rch += 1;
                         puntosPartida += 1;
-                        sucesoPartidaArr.push("rch");
+                        sucesoPartidaArr.push("RCH");
                     }
                     j.rachaConectada += 1;
 
@@ -413,7 +412,7 @@
 
                         j.rlp += bonoRlpOtorgado;
                         puntosPartida += bonoRlpOtorgado;
-                        sucesoPartidaArr.push(`rlp`);
+                        sucesoPartidaArr.push("RLP");
                     }
 
                     if(numFecha >= 6 && equipoRivalTieneTop5) {
@@ -427,13 +426,14 @@
                         if(bonoMgOtorgado > 0) {
                             j.mg += bonoMgOtorgado;
                             puntosPartida += bonoMgOtorgado;
-                            sucesoPartidaArr.push(`mg`);
+                            sucesoPartidaArr.push("MG");
                         }
                     }
 
                 } else {
                     j.vd = 0;
                     j.rachaConectada = 0;
+                    if(resist > 0) sucesoPartidaArr.push("R");
                 }
 
                 j.pts += puntosPartida;
@@ -472,17 +472,12 @@
         function actualizarTablaClasificacion() {
             const tbody = document.getElementById('tabla-cuerpo');
             const infoAct = document.getElementById('infoActualizacion');
-            const tituloSec = document.getElementById('tituloDinamicoSeccion');
             tbody.innerHTML = '';
 
-            const ahoraStr = new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString();
-            const nombreTituloDinamico = `Ranking Michi DM Dinámico F${datosTorneo.indiceDinamicoF} ${ahoraStr}`;
-            tituloSec.textContent = nombreTituloDinamico;
-
             if(datosTorneo.totalPartidasIngresadas > 0) {
-                infoAct.textContent = `Tabla actualizada hasta: Fecha ${datosTorneo.ultimaFechaNum}, Partida ${datosTorneo.ultimaPartidaNum}`;
+                infoAct.textContent = `Tabla actualizada Fecha ${datosTorneo.ultimaFechaNum}, Partida ${datosTorneo.ultimaPartidaNum}`;
             } else {
-                infoAct.textContent = `Tabla actualizada hasta: Ninguna partida registrada.`;
+                infoAct.textContent = `Tabla actualizada Ninguna partida registrada.`;
             }
 
             let listaJugadores = obtenerRankingOrdenado();
@@ -498,6 +493,13 @@
                 let varStr = variacion > 0 ? `+${variacion}` : `${variacion}`;
                 if(variacion === 0) varStr = "0";
 
+                let sucesoHTML = '';
+                if(j.ultimoSucesoStr === "Sin participación") {
+                    sucesoHTML = `<span style="color: var(--red); font-weight: bold;">Sin participación</span>`;
+                } else {
+                    sucesoHTML = j.ultimoSucesoStr;
+                }
+
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${pos}</td>
@@ -505,7 +507,7 @@
                     <td style="text-align: left; font-weight: bold; color: var(--accent-gold);">${j.nombre}</td>
                     <td>${j.pts}</td>
                     <td>${j.victorias}/${j.pj}</td>
-                    <td style="text-align: left;">${j.ultimoSucesoStr || 'Sin participación'}</td>
+                    <td style="text-align: left;">${sucesoHTML}</td>
                     <td>${j.vd}</td>
                     <td>${j.e}</td>
                     <td>${j.r}</td>
@@ -558,7 +560,6 @@
             let a = document.createElement('a');
             a.href = url;
             a.download = `Ranking_Maraton_Michi_DM_F${datosTorneo.ultimaFechaNum}_P${datosTorneo.ultimaPartidaNum}.csv`;
-            document.exports_a = a;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
