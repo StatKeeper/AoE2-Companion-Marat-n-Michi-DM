@@ -110,6 +110,12 @@
         }
         .btn:hover { background-color: var(--accent-gold-hover); }
 
+        .btn-danger {
+            background-color: var(--red);
+            color: #fff;
+        }
+        .btn-danger:hover { background-color: #d1322b; }
+
         .alert-success {
             background-color: rgba(35, 134, 54, 0.2);
             border: 1px solid var(--green);
@@ -212,6 +218,7 @@
             <p>Pega el texto plano de la partida para procesarla y actualizar el sistema:</p>
             <textarea id="inputTextPartida" rows="10" placeholder="año:2026&#10;mes:09&#10;jornada Fecha 1&#10;partida: 1&#10;duracion: 01:18:21&#10;..."></textarea>
             <button class="btn" onclick="procesarPartida()">Procesar y Guardar Partida</button>
+            <button class="btn btn-danger" onclick="reiniciarDatos()" style="margin-left: 1rem;">Borrar Datos Guardados</button>
             <div id="mensajeAlerta" class="alert-success">¡Partida procesada y guardada correctamente! La tabla se ha actualizado.</div>
         </div>
     </div>
@@ -224,6 +231,43 @@
             ultimaPartidaNum: 1,
             totalPartidasIngresadas: 0
         };
+
+        // Funciones de LocalStorage
+        function guardarEnLocalStorage() {
+            localStorage.setItem('datosTorneo_MichiDM', JSON.stringify(datosTorneo));
+        }
+
+        function cargarDeLocalStorage() {
+            const guardado = localStorage.getItem('datosTorneo_MichiDM');
+            if (guardado) {
+                try {
+                    datosTorneo = JSON.parse(guardado);
+                } catch (e) {
+                    console.error("Error al cargar los datos almacenados", e);
+                }
+            }
+        }
+
+        function reiniciarDatos() {
+            if (confirm("¿Estás seguro de borrar todos los datos guardados del torneo? Esta acción no se puede deshacer.")) {
+                localStorage.removeItem('datosTorneo_MichiDM');
+                datosTorneo = {
+                    jugadores: {},
+                    partidas: [],
+                    ultimaFechaNum: 1,
+                    ultimaPartidaNum: 1,
+                    totalPartidasIngresadas: 0
+                };
+                actualizarTablaClasificacion();
+                alert("Se han borrado los datos correctamente.");
+            }
+        }
+
+        // Cargar datos al iniciar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            cargarDeLocalStorage();
+            actualizarTablaClasificacion();
+        });
 
         function switchTab(evt, tabId) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -461,6 +505,9 @@
             });
 
             datosTorneo.partidas.push(texto);
+
+            // Guardar automáticamente en el navegador
+            guardarEnLocalStorage();
 
             const alerta = document.getElementById('mensajeAlerta');
             alerta.style.display = 'block';
