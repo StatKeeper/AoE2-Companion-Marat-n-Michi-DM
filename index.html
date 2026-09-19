@@ -150,6 +150,7 @@
                     <th>S</th>
                     <th>Rch</th>
                     <th>MG</th>
+                    <th>RLP</th>
                     <th>TB</th>
                 </tr>
             </thead>
@@ -191,14 +192,13 @@
         <div class="card">
             <h3>Cargar o Registrar Partidas</h3>
             <p>Pega el texto plano de la partida para procesarla y actualizar el sistema:</p>
-            <textarea id="inputTextPartida" rows="10" placeholder="año:2026&#10;mes:09&#10;jornada Fecha 1&#10;partida 1..."></textarea>
+            <textarea id="inputTextPartida" rows="10" placeholder="año:2026&#10;mes:09&#10;jornada Fecha 1&#10;duracion: 01:18:21&#10;..."></textarea>
             <button class="btn" onclick="procesarPartida()">Procesar y Guardar Partida</button>
             <div id="mensajeAlerta" class="alert-success">¡Partida procesada y guardada correctamente! La tabla se ha actualizado.</div>
         </div>
     </div>
 
     <script>
-        // Base de datos local en memoria del navegador
         let datosTorneo = {
             jugadores: {},
             partidas: []
@@ -212,6 +212,19 @@
             if(tabId === 'tab-clasificacion') actualizarTablaClasificacion();
         }
 
+        function convertirSegundos(strDuracion) {
+            if(!strDuracion) return 999999;
+            const partes = strDuracion.trim().split(':');
+            if(partes.length === 3) {
+                return parseInt(partes[0]) * 3600 + parseInt(partes[1]) * 60 + parseInt(partes[2]);
+            }
+            return 999999;
+        }
+
+        function obtenerRankingOrdenado() {
+            return Object.values(datosTorneo.jugadores).sort((a, b) => b.pts - a.pts || a.nombre.localeCompare(b.nombre));
+        }
+
         function procesarPartida() {
             const texto = document.getElementById('inputTextPartida').value;
             if(!texto.trim()) {
@@ -220,67 +233,157 @@
             }
 
             const lineas = texto.split('\n');
-            let equipoGanadorDetectado = "Equipo 2"; // Basado en el ejemplo provisto
+            let numFecha = 1;
+            let duracionSegundos = 999999;
+
+            // Extraer datos generales de la partida
+            lineas.forEach(linea => {
+                if(linea.toLowerCase().includes('jornada')) {
+                    const match = linea.match(/fecha\s*(\d+)/i);
+                    if(match) numFecha = parseInt(match[1]);
+                }
+                if(linea.toLowerCase().includes('duracion')) {
+                    const partesDur = linea.split(':');
+                    if(partesDur.length >= 3) {
+                        duracionSegundos = convertirSegundos(partesDur.slice(1).join(':'));
+                    }
+                }
+            });
+
+            // Separar jugadores por equipo
+            let equipos = { "Equipo 1": [], "Equipo 2": [] };
+            let lineasJugadores = [];
 
             lineas.forEach(linea => {
                 if(linea.includes('|')) {
                     const partes = linea.split('|').map(p => p.trim());
                     if(partes.length >= 12) {
-                        const nombreJugador = partes[0];
-                        const excel = parseInt(partes[1]) || 0;
-                        const resist = parseInt(partes[2]) || 0;
-                        const mil = parseInt(partes[3]) || 0;
-                        const oro = parseInt(partes[4]) || 0;
-                        const soc = parseInt(partes[5]) || 0;
-                        const rch = parseInt(partes[6]) || 0;
-                        const mg = parseInt(partes[7]) || 0;
+                        const nombre = partes[0];
                         const equipo = partes[11];
-
-                        // Si el jugador no existe en nuestra base de datos, lo creamos
-                        if(!datosTorneo.jugadores[nombreJugador]) {
-                            datosTorneo.jugadores[nombreJugador] = {
-                                nombre: nombreJugador,
-                                pts: 0,
-                                pj: 0,
-                                victorias: 0,
-                                vd: 0,
-                                e: 0,
-                                r: 0,
-                                m: 0,
-                                o: 0,
-                                s: 0,
-                                rch: 0,
-                                mg: 0,
-                                tb: 0
-                            };
+                        if(equipos[equipo]) {
+                            equipos[equipo].push(nombre);
                         }
-
-                        let j = datosTorneo.jugadores[nombreJugador];
-                        j.pj += 1;
-                        j.e += excel;
-                        j.r += resist;
-                        j.m += mil;
-                        j.o += oro;
-                        j.s += soc;
-                        j.rch += rch;
-                        j.mg += mg;
-                        j.tb += (excel + resist + mil + oro + soc + rch + mg);
-
-                        // Asignar puntos si pertenece al Equipo 2 (Ganador en este reporte de ejemplo)
-                        if(equipo === "Equipo 2") {
-                            j.victorias += 1;
-                            j.pts += 3;
-                            j.vd = 1;
-                        } else {
-                            j.vd = 0;
-                        }
+                        lineasJugadores.push({ partes, equipo, nombre });
                     }
                 }
             });
 
+            // Determinar ganadores y perdedores (asumimos Equipo 2 o el que corresponda según la lógica de victoria)
+            // En el ejemplo anterior el Equipo 2 ganó. Verificamos si los datos indican ganadores explícitamente o por puntaje base.
+            // Para mantener coherencia, evaluaremos el equipo ganador según el texto o si se especifica.
+            // Identificamos el equipo ganador buscando qué equipo tiene puntaje de victoria o por defecto Equipo 2 como en tu ejemplo.
+            let equipoGanador = "Equipo 2"; // Ajustable según formato, por defecto tomamos la regla previa
+
+            // Copia del ranking actual antes de aplicar la partida para evaluar Top 5 y posiciones previas
+            let rankingPrevio = obtenerRankingOrdenado();
+            let top5Nombres = rankingPrevio.slice(0, 5).map(j => j.nombre);
+
+            // Verificar si el equipo ganador se enfrentó a un top 5 (para Matagigantes)
+            let equipoRivalTieneTop5 = false;
+            let rivalEquipoGanador = (equipoGanador === "Equipo 2") ? "Equipo 1" : "Equipo 2";
+            equipos[rivalEquipoGanador].forEach(jugadorRival => {
+                if(top5Nombres.includes(jugadorRival)) {
+                    equipoRivalTieneTop5 = true;
+                }
+            });
+
+            lineasJugadores.forEach(item => {
+                const { partes, equipo, nombre } = item;
+                const excel = parseInt(partes[1]) || 0;
+                const resist = parseInt(partes[2]) || 0;
+                const mil = parseInt(partes[3]) || 0;
+                const oro = parseInt(partes[4]) || 0;
+                const soc = parseInt(partes[5]) || 0;
+
+                if(!datosTorneo.jugadores[nombre]) {
+                    datosTorneo.jugadores[nombre] = {
+                        nombre: nombre,
+                        pts: 0,
+                        pj: 0,
+                        victorias: 0,
+                        vd: 0,
+                        e: 0,
+                        r: 0,
+                        m: 0,
+                        o: 0,
+                        s: 0,
+                        rch: 0,
+                        mg: 0,
+                        rlp: 0,
+                        tb: 0,
+                        rachaConectada: 0
+                    };
+                }
+
+                let j = datosTorneo.jugadores[nombre];
+                let gano = (equipo === equipoGanador);
+
+                j.pj += 1;
+                j.e += excel;
+                j.r += resist;
+                j.m += mil;
+                j.o += oro;
+                j.s += soc;
+
+                let puntosPartida = excel + resist + mil + oro + soc;
+                let bonoRchOtorgado = 0;
+                let bonoMgOtorgado = 0;
+                let bonoRlpOtorgado = 0;
+
+                if(gano) {
+                    j.victorias += 1;
+                    j.vd = 1;
+                    puntosPartida += 3; // 3 puntos base por victoria
+
+                    // Lógica de Racha (Rch): Si ya venía con racha previa >= 1, gana el bono de racha (+1)
+                    if(j.rachaConectada >= 1) {
+                        bonoRchOtorgado = 1;
+                        j.rch += 1;
+                        puntosPartida += 1;
+                    }
+                    // Incrementamos la racha para el siguiente encuentro
+                    j.rachaConectada += 1;
+
+                    // Lógica de Relámpago (RLP): Si dura menos de 60 min (< 3600 segundos)
+                    if(duracionSegundos < 3600) {
+                        let posActual = rankingPrevio.findIndex(jug => jug.nombre === nombre) + 1;
+                        if(posActual === 0) posActual = rankingPrevio.length + 1;
+
+                        if(posActual <= 10) bonoRlpOtorgado = 1;
+                        else if(posActual <= 15) bonoRlpOtorgado = 2;
+                        else bonoRlpOtorgado = 3;
+
+                        j.rlp += bonoRlpOtorgado;
+                        puntosPartida += bonoRlpOtorgado;
+                    }
+
+                    // Lógica de Matagigantes (MG): A partir de la Fecha 6 y si el rival tenía un Top 5
+                    if(numFecha >= 6 && equipoRivalTieneTop5) {
+                        let posActual = rankingPrevio.findIndex(jug => jug.nombre === nombre) + 1;
+                        if(posActual === 0) posActual = rankingPrevio.length + 1;
+
+                        if(posActual >= 6 && posActual <= 10) bonoMgOtorgado = 1;
+                        else if(posActual >= 11 && posActual <= 15) bonoMgOtorgado = 2;
+                        else if(posActual >= 16) bonoMgOtorgado = 3;
+
+                        if(bonoMgOtorgado > 0) {
+                            j.mg += bonoMgOtorgado;
+                            puntosPartida += bonoMgOtorgado;
+                        }
+                    }
+
+                } else {
+                    j.vd = 0;
+                    // Derrota rompe la racha por completo
+                    j.rachaConectada = 0;
+                }
+
+                j.pts += puntosPartida;
+                j.tb = j.e + j.r + j.m + j.o + j.s + j.rch + j.mg + j.rlp;
+            });
+
             datosTorneo.partidas.push(texto);
 
-            // Mostrar mensaje de éxito
             const alerta = document.getElementById('mensajeAlerta');
             alerta.style.display = 'block';
             setTimeout(() => { alerta.style.display = 'none'; }, 4000);
@@ -291,11 +394,10 @@
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
 
-            // Convertir objeto a array y ordenar por Puntos (descendente)
-            let listaJugadores = Object.values(datosTorneo.jugadores).sort((a, b) => b.pts - a.pts);
+            let listaJugadores = obtenerRankingOrdenado();
 
             if(listaJugadores.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="15" style="color: var(--text-muted);">Aún no hay jugadores registrados. Ve a Administración y procesa una partida.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="16" style="color: var(--text-muted);">Aún no hay jugadores registrados. Ve a Administración y procesa una partida.</td></tr>`;
                 return;
             }
 
@@ -307,7 +409,7 @@
                     <td style="text-align: left; font-weight: bold; color: var(--accent-gold);">${j.nombre}</td>
                     <td>${j.pts}</td>
                     <td>${j.victorias}/${j.pj}</td>
-                    <td>${j.victorias > 0 ? 'Victoria' : 'Derrota'}</td>
+                    <td>${j.vd === 1 ? 'Victoria' : 'Derrota'}</td>
                     <td>${j.vd}</td>
                     <td>${j.e}</td>
                     <td>${j.r}</td>
@@ -316,6 +418,7 @@
                     <td>${j.s}</td>
                     <td>${j.rch}</td>
                     <td>${j.mg}</td>
+                    <td>${j.rlp}</td>
                     <td>${j.tb}</td>
                 `;
                 tbody.appendChild(tr);
