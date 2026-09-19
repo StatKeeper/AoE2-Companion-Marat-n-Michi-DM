@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Maratón Michi DM</title>
+    <style>
+        :root {
+            --bg-dark: #121418;
+            --bg-card: #1a1d24;
+            --bg-hover: #222630;
+            --accent-gold: #e5c158;
+            --accent-gold-hover: #f3d06a;
+            --text-main: #e1e4e8;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Navegación estilo AoE2 Companion */
+        nav {
+            background-color: var(--bg-card);
+            border-bottom: 2px solid var(--accent-gold);
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 0 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-tab {
+            padding: 1rem 1.25rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            background: none;
+            border-top: none; border-left: none; border-right: none;
+        }
+        .nav-tab:hover { color: var(--accent-gold); }
+        .nav-tab.active {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+        }
+
+        /* Contenido de las pestañas */
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .tab-content.active { display: block; }
+
+        h1, h2, h3 { color: var(--accent-gold); margin-bottom: 1rem; }
+        p { color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem; }
+
+        /* Estilos generales para tarjetas y tablas */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #222630;
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+        tr:hover { background-color: var(--bg-hover); }
+
+        /* Formularios y Botones */
+        input, select, textarea {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 6px;
+            width: 100%;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-gold);
+            outline: none;
+        }
+        .btn {
+            background-color: var(--accent-gold);
+            color: #121418;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn:hover { background-color: var(--accent-gold-hover); }
+
+        .welcome-hero {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+        .welcome-hero img {
+            max-width: 320px;
+            border-radius: 12px;
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Pestañas Principal -->
+    <nav>
+        <button class="nav-tab active" onclick="switchTab(event, 'tab-inicio')">Inicio</button>
+        <button class="nav-tab" onclick="switchTab(event, 'tab-clasificacion')">Clasificación</button>
+        <button class="nav-tab" onclick="switchTab(event, 'tab-jugadores')">Jugadores</button>
+        <button class="nav-tab" onclick="switchTab(event, 'tab-estadisticas')">Estadísticas</button>
+        <button class="nav-tab" onclick="switchTab(event, 'tab-candidatos')">Candidatos</button>
+        <button class="nav-tab" onclick="switchTab(event, 'tab-historial')">Historial</button>
+        <button class="nav-tab" onclick="switchTab(event, 'tab-administracion')">Administración</button>
+    </nav>
+
+    <!-- 1. INICIO -->
+    <div id="tab-inicio" class="tab-content active">
+        <div class="welcome-hero">
+            <h1>RANKING MARATÓN MICHI DM</h1>
+            <p>Bienvenido al portal oficial del torneo de la comunidad.</p>
+            <div class="card" style="max-width: 400px; margin: 0 auto;">
+                <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">Jugador de la Fecha</h3>
+                <p style="color: var(--accent-gold); font-weight: bold; font-size: 1.2rem;">Papita Huayro</p>
+                <p style="font-size: 0.85rem; margin-bottom: 0;">Civilización: Bengalíes</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CLASIFICACIÓN -->
+    <div id="tab-clasificacion" class="tab-content">
+        <h2>Clasificación General</h2>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <select style="width: 150px;"><option>2026</option><option>2027</option></select>
+            <select style="width: 200px;"><option>Septiembre</option></select>
+            <select style="width: 250px;"><option>Todo el mes (acumulado)</option></select>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Var</th>
+                    <th>Jugador</th>
+                    <th>Pts</th>
+                    <th>V/PJ</th>
+                    <th>Último Suceso</th>
+                    <th>V/D</th>
+                    <th>E</th>
+                    <th>R</th>
+                    <th>M</th>
+                    <th>O</th>
+                    <th>S</th>
+                    <th>Rch</th>
+                    <th>MG</th>
+                    <th>TB</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>0</td>
+                    <td style="text-align: left; font-weight: bold; color: var(--accent-gold);">Papita Huayro</td>
+                    <td>30</td>
+                    <td>5/7</td>
+                    <td>Sin participación</td>
+                    <td>0</td>
+                    <td>4</td>
+                    <td>1</td>
+                    <td>5</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>3</td>
+                    <td>0</td>
+                    <td>15</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>0</td>
+                    <td style="text-align: left; font-weight: bold;">GJ Euphory</td>
+                    <td>30</td>
+                    <td>6/6</td>
+                    <td>Sin participación</td>
+                    <td>0</td>
+                    <td>2</td>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>5</td>
+                    <td>0</td>
+                    <td>11</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. JUGADORES -->
+    <div id="tab-jugadores" class="tab-content">
+        <h2>Directorio de Jugadores</h2>
+        <div class="card">
+            <input type="text" id="searchPlayer" placeholder="Escribe un nombre para buscar...">
+        </div>
+    </div>
+
+    <!-- 4. ESTADÍSTICAS -->
+    <div id="tab-estadisticas" class="tab-content">
+        <h2>Estadísticas del Torneo</h2>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <button class="btn" style="background: var(--bg-card); color: var(--accent-gold); border: 1px solid var(--border-color);">Tiempos</button>
+            <button class="btn" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color);">Civs / WR</button>
+            <button class="btn" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color);">Sinergia</button>
+        </div>
+        <div class="card">
+            <p>Selecciona de 2 a 4 jugadores para comparar su rendimiento conjunto.</p>
+        </div>
+    </div>
+
+    <!-- 5. CANDIDATOS -->
+    <div id="tab-candidatos" class="tab-content">
+        <h2>Candidatos al Jugador de la Fecha</h2>
+        <div class="card">
+            <p>Evaluación de méritos, bonos y desempeño oficial por jornada.</p>
+        </div>
+    </div>
+
+    <!-- 6. HISTORIAL -->
+    <div id="tab-historial" class="tab-content">
+        <h2>Historial de Partidas</h2>
+        <div class="card">
+            <p>Mostrando el registro cronológico de los encuentros disputados.</p>
+        </div>
+    </div>
+
+    <!-- 7. ADMINISTRACIÓN -->
+    <div id="tab-administracion" class="tab-content">
+        <h2>Panel de Administración</h2>
+        <div class="card">
+            <h3>Cargar o Registrar Partidas</h3>
+            <p>Ingresa los datos de las partidas en el formato correspondiente para actualizar el sistema.</p>
+            <textarea rows="6" placeholder="año 2026&#10;mes 09&#10;jornada Fecha 1&#10;partida 1 01:07:08..."></textarea>
+            <button class="btn">Procesar y Guardar Partida</button>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(evt, tabId) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(c => c.classList.remove('active'));
+
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
