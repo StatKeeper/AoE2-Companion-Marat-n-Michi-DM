@@ -18,8 +18,9 @@
             --red: #f85149;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 70px; }
         
+        /* Navegación por defecto (PC / Escritorio arriba) */
         nav {
             background-color: var(--bg-card);
             border-bottom: 2px solid var(--accent-gold);
@@ -127,6 +128,33 @@
         }
         .welcome-hero { text-align: center; padding: 3rem 1rem; }
         .subtitulo-estado { color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem; }
+
+        /* Adaptación para Celulares (Estilo App / Barra Abajo y sin Administración) */
+        @media (max-width: 768px) {
+            nav {
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                width: 100%;
+                border-bottom: none;
+                border-top: 2px solid var(--accent-gold);
+                justify-content: space-around;
+                padding: 0;
+            }
+            .nav-tab {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+                flex: 1;
+                text-align: center;
+            }
+            .nav-tab.tab-admin-btn {
+                display: none !important;
+            }
+            .tab-content {
+                padding: 1rem;
+                padding-bottom: 5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -138,7 +166,7 @@
         <button class="nav-tab" onclick="switchTab(event, 'tab-estadisticas')">Estadísticas</button>
         <button class="nav-tab" onclick="switchTab(event, 'tab-candidatos')">Candidatos</button>
         <button class="nav-tab" onclick="switchTab(event, 'tab-historial')">Historial</button>
-        <button class="nav-tab" onclick="switchTab(event, 'tab-administracion')">Administración</button>
+        <button class="nav-tab tab-admin-btn" onclick="switchTab(event, 'tab-administracion')">Administración</button>
     </nav>
 
     <!-- 1. INICIO -->
@@ -232,7 +260,6 @@
             totalPartidasIngresadas: 0
         };
 
-        // Funciones de LocalStorage
         function guardarEnLocalStorage() {
             localStorage.setItem('datosTorneo_MichiDM', JSON.stringify(datosTorneo));
         }
@@ -263,7 +290,6 @@
             }
         }
 
-        // Cargar datos al iniciar la página
         window.addEventListener('DOMContentLoaded', () => {
             cargarDeLocalStorage();
             actualizarTablaClasificacion();
@@ -505,8 +531,6 @@
             });
 
             datosTorneo.partidas.push(texto);
-
-            // Guardar automáticamente en el navegador
             guardarEnLocalStorage();
 
             const alerta = document.getElementById('mensajeAlerta');
@@ -530,7 +554,7 @@
             let listaJugadores = obtenerRankingOrdenado();
 
             if(listaJugadores.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="16" style="color: var(--text-muted);">Aún no hay jugadores registrados con participación. Ve a Administración y procesa una partida.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="16" style="color: var(--text-muted);">Aún no hay jugadores registrados con participación. Procesa una partida desde PC para ver datos.</td></tr>`;
                 return;
             }
 
