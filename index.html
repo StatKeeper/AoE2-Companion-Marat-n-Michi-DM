@@ -137,14 +137,14 @@
     <!-- 1. INICIO -->
     <div id="tab-inicio" class="tab-content active">
         <div class="welcome-hero">
-            <h1>RANKING MARATÓN MICHI DM</h1>
+            <h1 id="tituloDinamicoPrincipal">RANKING MARATÓN MICHI DM</h1>
             <p>Bienvenido al portal oficial del torneo de la comunidad.</p>
         </div>
     </div>
 
     <!-- 2. CLASIFICACIÓN -->
     <div id="tab-clasificacion" class="tab-content">
-        <h2>Clasificación General</h2>
+        <h2 id="tituloDinamicoSeccion">Clasificación General</h2>
         <div id="infoActualizacion" class="subtitulo-estado">Tabla actualizada hasta: Ninguna partida registrada.</div>
         
         <div class="table-container">
@@ -219,9 +219,10 @@
         let datosTorneo = {
             jugadores: {},
             partidas: [],
-            ultimaFecha: "Fecha 1",
+            ultimaFechaNum: 1,
             ultimaPartidaNum: 1,
-            totalPartidasIngresadas: 0
+            totalPartidasIngresadas: 0,
+            indiceDinamicoF: 10
         };
 
         function switchTab(evt, tabId) {
@@ -242,10 +243,9 @@
         }
 
         function obtenerRankingOrdenado() {
-            // Filtrar solo jugadores con al menos 1 partida jugada (pj > 0) y limitar a máximo 25
             let activos = Object.values(datosTorneo.jugadores).filter(j => j.pj > 0);
             activos.sort((a, b) => b.pts - a.pts || a.nombre.localeCompare(b.nombre));
-            return activos.slice(0, 25);
+            return activos.slice(0, 30);
         }
 
         function procesarPartida() {
@@ -278,11 +278,11 @@
                 }
             });
 
-            datosTorneo.ultimaFecha = `Fecha ${numFecha}`;
+            datosTorneo.ultimaFechaNum = numFecha;
             datosTorneo.ultimaPartidaNum = numPartida;
             datosTorneo.totalPartidasIngresadas += 1;
+            datosTorneo.indiceDinamicoF = 9 + datosTorneo.totalPartidasIngresadas;
 
-            // Guardar posiciones anteriores antes de actualizar para calcular la variación (Var)
             let rankingAnterior = obtenerRankingOrdenado();
             let mapaPosicionesAnteriores = {};
             rankingAnterior.forEach((j, idx) => {
@@ -318,7 +318,6 @@
             let equipoGanador = (puntosEquipo1 > puntosEquipo2) ? "Equipo 1" : "Equipo 2";
 
             let top5Nombres = rankingAnterior.slice(0, 5).map(j => j.nombre);
-
             let equipoRivalTieneTop5 = false;
             let rivalEquipoGanador = (equipoGanador === "Equipo 2") ? "Equipo 1" : "Equipo 2";
             equipos[rivalEquipoGanador].forEach(jugadorRival => {
@@ -327,7 +326,6 @@
                 }
             });
 
-            // Marcar participación en esta partida para todos los existentes
             Object.values(datosTorneo.jugadores).forEach(j => {
                 j.participoEnEstaPartida = false;
             });
@@ -345,7 +343,6 @@
                 let soc = parseInt(partes[6]) || 0;
 
                 if(!datosTorneo.jugadores[nombre]) {
-                    // Jugador nuevo: su posición base previa de referencia es el total actual + 1
                     totalJugadoresActualesEnBD += 1;
                     datosTorneo.jugadores[nombre] = {
                         nombre: nombre,
@@ -384,11 +381,11 @@
                 if(gano) sucesoPartidaArr.push("Victoria");
                 else sucesoPartidaArr.push("Derrota");
 
-                if(excel > 0) sucesoPartidaArr.push("E");
-                if(resist > 0) sucesoPartidaArr.push("R");
-                if(mil > 0) sucesoPartidaArr.push("M");
-                if(oro > 0) sucesoPartidaArr.push("O");
-                if(soc > 0) sucesoPartidaArr.push("S");
+                if(excel > 0) sucesoPartidaArr.push("e");
+                if(resist > 0) sucesoPartidaArr.push("r");
+                if(mil > 0) sucesoPartidaArr.push("m");
+                if(oro > 0) sucesoPartidaArr.push("o");
+                if(soc > 0) sucesoPartidaArr.push("s");
 
                 let bonoRchOtorgado = 0;
                 let bonoMgOtorgado = 0;
@@ -402,7 +399,7 @@
                         bonoRchOtorgado = 1;
                         j.rch += 1;
                         puntosPartida += 1;
-                        sucesoPartidaArr.push("Rch");
+                        sucesoPartidaArr.push("rch");
                     }
                     j.rachaConectada += 1;
 
@@ -416,7 +413,7 @@
 
                         j.rlp += bonoRlpOtorgado;
                         puntosPartida += bonoRlpOtorgado;
-                        sucesoPartidaArr.push(`RLP${bonoRlpOtorgado}`);
+                        sucesoPartidaArr.push(`rlp`);
                     }
 
                     if(numFecha >= 6 && equipoRivalTieneTop5) {
@@ -430,7 +427,7 @@
                         if(bonoMgOtorgado > 0) {
                             j.mg += bonoMgOtorgado;
                             puntosPartida += bonoMgOtorgado;
-                            sucesoPartidaArr.push(`MG${bonoMgOtorgado}`);
+                            sucesoPartidaArr.push(`mg`);
                         }
                     }
 
@@ -441,17 +438,15 @@
 
                 j.pts += puntosPartida;
                 j.tb = j.e + j.r + j.m + j.o + j.s + j.rch + j.mg + j.rlp;
-                j.ultimoSucesoStr = sucesoPartidaArr.join(" + ");
+                j.ultimoSucesoStr = `${puntosPartida} = ` + sucesoPartidaArr.join(" + ");
             });
 
-            // Para los que no participaron en esta partida
             Object.values(datosTorneo.jugadores).forEach(j => {
                 if(!j.participoEnEstaPartida) {
                     j.ultimoSucesoStr = "Sin participación";
                 }
             });
 
-            // Calcular variaciones finales de posición (Var)
             let nuevoRanking = obtenerRankingOrdenado();
             nuevoRanking.forEach((j, nuevoIdx) => {
                 let nuevaPos = nuevoIdx + 1;
@@ -459,7 +454,7 @@
                 if(datosTorneo.totalPartidasIngresadas === 1 && !mapaPosicionesAnteriores[j.nombre]) {
                     j.varCalc = 0;
                 } else {
-                    let diff = posAnt - nuevaPos; // Posición anterior menos nueva posición (positivo si subió)
+                    let diff = posAnt - nuevaPos;
                     j.varCalc = diff;
                 }
                 j.posicionReferenciaAnterior = nuevaPos;
@@ -477,10 +472,15 @@
         function actualizarTablaClasificacion() {
             const tbody = document.getElementById('tabla-cuerpo');
             const infoAct = document.getElementById('infoActualizacion');
+            const tituloSec = document.getElementById('tituloDinamicoSeccion');
             tbody.innerHTML = '';
 
+            const ahoraStr = new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString();
+            const nombreTituloDinamico = `Ranking Michi DM Dinámico F${datosTorneo.indiceDinamicoF} ${ahoraStr}`;
+            tituloSec.textContent = nombreTituloDinamico;
+
             if(datosTorneo.totalPartidasIngresadas > 0) {
-                infoAct.textContent = `Tabla actualizada hasta: ${datosTorneo.ultimaFecha}, Partida ${datosTorneo.ultimaPartidaNum}`;
+                infoAct.textContent = `Tabla actualizada hasta: Fecha ${datosTorneo.ultimaFechaNum}, Partida ${datosTorneo.ultimaPartidaNum}`;
             } else {
                 infoAct.textContent = `Tabla actualizada hasta: Ninguna partida registrada.`;
             }
@@ -557,7 +557,8 @@
             let url = URL.createObjectURL(blob);
             let a = document.createElement('a');
             a.href = url;
-            a.download = `Ranking_Maraton_Michi_DM_${datosTorneo.ultimaFecha.replace(' ', '_')}_P${datosTorneo.ultimaPartidaNum}.csv`;
+            a.download = `Ranking_Maraton_Michi_DM_F${datosTorneo.ultimaFechaNum}_P${datosTorneo.ultimaPartidaNum}.csv`;
+            document.exports_a = a;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
